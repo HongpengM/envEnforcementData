@@ -1,0 +1,105 @@
+
+* Environment Protection Enforcement Data Crawler (envEnforcementData)
+  This repo is an submission to  [[https://dorahacks.global/nature-guardian][ Dorahacks Nature Guardian Hackathon ]]
+  
+** Inspiration & Targets
+   This envEnforcementData project is inspired by DoraHacks and have following targets
+   - Revoke the environment protection awareness of entreprises.
+   - Provide environment protection enforcement information to help governance/evaluating an company/organization/person from the environment protection aspect
+** *PR & issues are WELCOME!*
+
+
+* 设计架构 Architecture Overview
+
+** Pipeline 
+   URL Entry-->Enforcement Filing(执法公告)-->[NLP|Table Extractor|...]Enforcement Record(执法记录)
+   1. Read URL data from configuration files读取配置文件里面的入口url数据
+      *Spider --> start_request* 
+   2. Try Crawl Enforcement File 按优先顺序爬取公告信息
+      - Rules to extends data
+      - Machine Learning Data Auto Select Rules
+      - All failed --> Headless Browser
+
+   3. Crawl Target Link and Store those Result in MongoDB 获取目标链接爬取，存储Enforcement File(执法公告)类数据
+      1. XPath Extractor
+      2. Selenium Extractor
+      3. .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement File(执法公告)数据
+      4. QR Code图片的跳转处理
+
+   4. Decode information in Enforcement File 对Enforcement File(执法公告)中的信息进行解析
+      1. text类信息的解析
+	 参考Reader View的解析[fn:1]
+      2. 电子表格类信息的解析
+   
+   5. Enforcement Record， Enforcement Record(执法记录)数据的提取
+      - text --> NLP
+      - eTable --> Table Extractor + NLP
+      - PDF/image --> OCR --> NLP
+      
+
+
+** Current Progress
+   
+    | Task                                          | Sub-task                                                              | Status   |
+    |-----------------------------------------------+-----------------------------------------------------------------------+----------|
+    | 读取配置文件里面的入口url数据                 |                                                                       | Complete |
+    |                                               | *Spider --> start_request*                                            | Complete |
+    | 通过Rules来配置文章条目链接的爬取             |                                                                       |          |
+    |                                               | Rules to extends data                                                 |          |
+    |                                               | Machine Learning Data Auto Select Rules                               |          |
+    |                                               | All failed --> Headless Browser                                       |          |
+    | 获取目标链接爬取，存储Enforcement Entry类数据 |                                                                       |          |
+    |                                               | XPath Extractor                                                       |          |
+    |                                               | Selenium Extractor                                                    |          |
+    |                                               | .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement Entry数据 |          |
+    |                                               | QR Code图片的跳转处理                                                 |          |
+    | 对Enforcement Entry中的信息进行解析           |                                                                       |          |
+    |                                               | 电子表格类信息的解析                                                  |          |
+    | Enforcement Record数据的提取                  |                                                                       |          |
+    |                                               | text --> NLP                                                          |          |
+    |                                               | eTable --> Table Extractor + NLP                                      |          |
+    |                                               | PDF/image --> OCR --> NLP                                             |          |
+    
+    
+
+* Data Analyzing
+This repo is meant to collect raw environment enforcement data and get more distinct data format rather than raw HTML.
+
+** Data at a galance
+   A minimal start of different API Links
+| Province | City   | Region   | Keywords                                                  | APIType                                                                                | APILink                                                                                                                                                                                                                       | Xpath                                                                    | XPathTitle | XPathLink | TargetFileType |
+|----------+--------+----------+-----------------------------------------------------------+----------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------+------------+-----------+----------------|
+| 福建省   | 福州市 | 福州市   | 行政处罚                                                  | 静态页面，规则为index.htm index_1.htm 超出边界404                                      | http://www.fuzhou.gov.cn/zgfzzt/shbj/zz/ztzl/hjwfpgt/index.htm                                                                                                                                                                | /html/body/div[4]/div/div/div/ul/li/a                                    | /@title    | /@href    | 电子表格;xls   |
+| 福建省   | 福州市 | 晋安区   | 行政处罚案件与查封扣押表                                  | 有XHR接口，返回可处理成JSON的响应，修改prepage参数改变返回的数据数量，建议1000         | http://jaq.fuzhou.gov.cn/was5/web/search?channelid=290792&templet=advsch.jsp&sortfield=-docorderpri,-docreltime&classsql=chnlid=31540&prepage=15&page=1                                                                       |                                                                          |            |           |                |
+| 福建省   | 福州市 | 平潭县   | 行政处罚决定书;查封（扣押）决定书                         | 动态页面，有明确的HTML返回接口，修改参数的pagenumber                                   | http://www.pingtan.gov.cn/jhtml/cn/7384?cnid=7384&subCnId=-1&comefrom=-1&releaseYear=-1&imgView=0&titleImg=0&pagenumber=4                                                                                                     | /html/body/div/div/div/div/ul/li/a                                       | /@title    | /@href    |                |
+| 福建省   | 厦门市 | 厦门市   | 闽厦环罚;闽厦环查（扣）                                   | 静态页面，规则为index.htm index_1.htm 超出边界404                                      | http://hbj.xm.gov.cn/zwgk/hjjgxxgk/xzcf/index.htm                                                                                                                                                                             | /html/body/div/div[3]/table/tbody/tr/td[2]/div/ul/li/a                   | /@title    | /@href    |                |
+| 福建省   | 厦门市 | 鲤城区   | 行政处罚决定书                                            | 动态页面，有明确的HTML返回接口，修改参数Page同时URL中index.htm从 index.htm, index_htm1 | http://www.qzlc.gov.cn/xxgk/hjbhxx/jsxmsp/index_1.htm?page=2                                                                                                                                                                  | /html/body/div[2]/div[3]/div/div/div/div/ul/li/a                         | /@title    | /@href    |                |
+| 福建省   | 厦门市 | 丰泽区   | 行政处罚情况                                              | 静态页面，规则为index.htm index_1.htm 超出边界406                                      | http://www.qzfz.gov.cn/xzcf1/index.html                                                                                                                                                                                       | /html/body/div/div[5]/div/div/div/ul/li/a                                | /@title    | /@href    |                |
+| 福建省   | 厦门市 | 洛江区   | 行政处罚信息公示;行政拘留公示;刑事案件公示                | 静态页面，规则为179-1.htm, 179-2.htm 超出边界404                                       | http://www.qzlj.gov.cn/Pub/news-179-1.html                                                                                                                                                                                    | /html/body/div/div[5]/div[2]/div/div/ul/li/a                             | /@title    | /@href    |                |
+| 福建省   | 厦门市 | 泉港区   | 查封扣押案件信息公开;行政处罚案件                         | 调整pager.offset,调整maxpage,返回html,带Cookies                                        | http://www.qg.gov.cn/qg/view/divtreelist_main_02.jsp?siteunid=BF015165744847119112888A3D259842&id=7B3B236F450DFB83A125E7D01B5F72E7&pager.offset=0&maxPageItems=1000&currpage=0                                                | /html/body/table/tbody/tr/td/table[1]/tbody/tr[1]/td/table/tbody/tr/td/a | /@title    | /@href    |                |
+| 福建省   | 晋江市 | 晋江市   | 暂无信息                                                  | JS动态加载，Selenium 修改page参数                                                      | http://120.35.29.56/xzzf/web/fjxzcf/jsp/power/powerListSearch.jsp?powerid=&powername=&deptsel=752AB52F89C25DE740DBEFC4808B2EFE&powertypesel=CF&page=1&size=12                                                                 |                                                                          |            |           |                |
+| 福建省   | 厦门市 | 南靖县   | 行政处罚决定书;查封决定书                                 | 修改参数page,超出界限返回最后一页                                                      | http://www.fjnj.gov.cn/cms/sitemanage/index.shtml?siteId=60421385054980000&page=1                                                                                                                                             |                                                                          |            |           |                |
+| 福建省   | 福鼎市 | 福鼎市   | 行政处罚决定书;查封（扣押）决定书;责令改正违法行为决定书; | 有XHR接口，返回可处理成JSON的响应，修改prepage参数改变返回的数据数量，建议1006         | http://www.fuding.gov.cn/was5/web/search?channelid=238418&templet=advsch.jsp&sortfield=-pubdate&classsql=docpuburl ='%http://www.fuding.gov.cn/bmzfxxgk/hbj/zfxxgkml/%'*modal=1&random=0.6643006700448726&prepage=1000&page=1 |                                                                          |            |           | text           |
+| 福建省   |        | 福建省厅 | 行政处罚决定书;挂牌督办                                   | 静态页面，规则为list.htm list_1.htm 超出边界404                                        | http://hbt.fujian.gov.cn/zwgk/ztzl/wrygk/list.htm                                                                                                                                                                             | /html/body/div/table/tbody/tr/td/a                                       | /@title    | /@href    | docx;text      |
+
+
+** Data Source Analysis
+ 
+   总体上网站分为以下几类
+   1. 有XHR接口的                     ------------------------>   直接爬借口解析JSON/XML
+   2. 渲染静态页面，按明显顺序的         ------------------------->   直接爬页面提取Table
+   3. 渲染动态页面，动态页面的部分有简单的规则构建访问请求 ------------>   直接爬渲染接口 
+   4. 渲染动态页面，动态页面访问复杂      ------------------------->   Headless Driver(eg: CasperJS Selenium)
+  
+
+
+* License
+  Rights related to Source Codes (excluding the demo data, which copyrights belong to DoraHacks & The Sponsor) belongs to this gitlab account owner.
+  Please view LICENSE file for further details
+
+* Footnotes
+
+[fn:1] https://github.com/rNeomy/reader-view/
+
+
+

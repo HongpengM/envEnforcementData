@@ -1,0 +1,12 @@
+
+
+*  Items 设计文档
+
+** FileResponseItem
+   - Collections: 'fileResponse'
+**** General Attributes
+     - uuid: id
+     - createdAt: creation time
+     - updatedAt: updated time
+     - sourceLink: where this reponse comes
+     - 
