@@ -43,7 +43,7 @@ ROBOTSTXT_OBEY = False
 #TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
+# DEFAULT_REQUEST_HEADERS = {
 #   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 #   'Accept-Language': 'en',
 #}
@@ -51,7 +51,7 @@ ROBOTSTXT_OBEY = False
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 SPIDER_MIDDLEWARES = {
-   'envEnforcementData.middlewares.EnvenforcementdataSpiderMiddleware': 543,
+#   'envEnforcementData.middlewares.EnvenforcementdataSpiderMiddleware': 543,
 }
 
 # Enable or disable downloader middlewares
@@ -63,7 +63,7 @@ SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
 SELENIUM_DRIVER_ARGUMENTS=['-headless']  # '--headless' if using chrome instead of firefox
 
 DOWNLOADER_MIDDLEWARES = {
-    'envEnforcementData.middlewares.EnvenforcementdataDownloaderMiddleware': 543,
+#    'envEnforcementData.middlewares.EnvenforcementdataDownloaderMiddleware': 543,
     'random_useragent.RandomUserAgentMiddleware': 400,
 }
 USER_AGENT_LIST = "./user-agents.txt"
@@ -109,8 +109,9 @@ MONGO_DB = 'envPunishment'
 #                           Project Scope Definition                          #
 ###############################################################################
 
-ENTRY_URLS_FILE = 'entryUrls_minimal.xlsx'
-
+ENTRY_URLS_FILE = 'entryUrls_minimal2.xlsx'
+DOWNLOAD_FOLDER = './download'
+LOG_FOLDER ='./logs'
 # Environment Protection File Response
 
 # Environment Protection Enforcement File Settings
@@ -122,3 +123,15 @@ EPER_RECORD_PAGE_TYPE = ['htmlTable', 'text', 'pdf', 'png', 'jpg', 'jpeg', 'xls'
 
 EPER_ENTITY_TYPE = ['person', 'organization', 'company','institution']
 EPER_ENTITY_CODE_TYPE = ['统一社会信用代码', '营业执照']
+
+# Environment Enforcement File Entry URL Formatting
+EEFEUF_XHR_REQUEST = 'xhr_request'
+
+
+# Environment Enforcement File Request Try Order
+EEFRO_FIRST_TRY = 'first-try'
+EEFRO_NO_NEXT_TRY = 'no-next-try'
+EEFRO_BUILD_NEXT_REQUEST_PARAM = 'build-next-request-param'
+EEFRO_BUILD_NEXT_REQUEST_STATIC = 'build-next-request-static'
+EEFRO_USE_SELENIUM = 'use-selenium'
+

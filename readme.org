@@ -15,8 +15,17 @@
    URL Entry-->Enforcement Filing(执法公告)-->[NLP|Table Extractor|...]Enforcement Record(执法记录)
    1. Read URL data from configuration files读取配置文件里面的入口url数据
       *Spider --> start_request* 
-   2. Try Crawl Enforcement File 按优先顺序爬取公告信息
+   2. Try Crawl Enforcement File 按优先顺序爬取公告列表信息
       - Rules to extends data
+	- Get Entry URL
+	- Response Analysis
+	  - XHR Json Response --> no next request
+	  - page number parameter
+	    - if extracted links are the same with the previous page --> no next request
+	    - else --> build next request parameter
+	  - `index.htm`, `index_1.htm` like URL
+	    - if response status 200 - 206 --> build next request static
+	  - All failed --> selenium request
       - Machine Learning Data Auto Select Rules
       - All failed --> Headless Browser
 
@@ -40,25 +49,25 @@
 
 ** Current Progress
    
-    | Task                                          | Sub-task                                                              | Status   |
-    |-----------------------------------------------+-----------------------------------------------------------------------+----------|
-    | 读取配置文件里面的入口url数据                 |                                                                       | Complete |
-    |                                               | *Spider --> start_request*                                            | Complete |
-    | 通过Rules来配置文章条目链接的爬取             |                                                                       |          |
-    |                                               | Rules to extends data                                                 |          |
-    |                                               | Machine Learning Data Auto Select Rules                               |          |
-    |                                               | All failed --> Headless Browser                                       |          |
-    | 获取目标链接爬取，存储Enforcement Entry类数据 |                                                                       |          |
-    |                                               | XPath Extractor                                                       |          |
-    |                                               | Selenium Extractor                                                    |          |
-    |                                               | .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement Entry数据 |          |
-    |                                               | QR Code图片的跳转处理                                                 |          |
-    | 对Enforcement Entry中的信息进行解析           |                                                                       |          |
-    |                                               | 电子表格类信息的解析                                                  |          |
-    | Enforcement Record数据的提取                  |                                                                       |          |
-    |                                               | text --> NLP                                                          |          |
-    |                                               | eTable --> Table Extractor + NLP                                      |          |
-    |                                               | PDF/image --> OCR --> NLP                                             |          |
+    | Task                                          | Sub-task                                                              | Status      |
+    |-----------------------------------------------+-----------------------------------------------------------------------+-------------|
+    | 读取配置文件里面的入口url数据                 |                                                                       | Complete    |
+    |                                               | *Spider --> start_request*                                            | Complete    |
+    | 通过Rules来配置文章条目链接的爬取             |                                                                       | Progressing |
+    |                                               | Rules to extends data                                                 | Progressing |
+    |                                               | Machine Learning Data Auto Select Rules                               |             |
+    |                                               | All failed --> Headless Browser                                       |             |
+    | 获取目标链接爬取，存储Enforcement Entry类数据 |                                                                       |             |
+    |                                               | XPath Extractor                                                       |             |
+    |                                               | Selenium Extractor                                                    |             |
+    |                                               | .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement Entry数据 |             |
+    |                                               | QR Code图片的跳转处理                                                 |             |
+    | 对Enforcement Entry中的信息进行解析           |                                                                       |             |
+    |                                               | 电子表格类信息的解析                                                  |             |
+    | Enforcement Record数据的提取                  |                                                                       |             |
+    |                                               | text --> NLP                                                          |             |
+    |                                               | eTable --> Table Extractor + NLP                                      |             |
+    |                                               | PDF/image --> OCR --> NLP                                             |             |
     
     
 
