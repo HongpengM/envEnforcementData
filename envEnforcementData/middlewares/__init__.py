@@ -1,2 +1,2 @@
-from .downloadMiddlewares import EnvenforcementdataDownloaderMiddleware
-from .spiderMiddlewares import EnvenforcementdataSpiderMiddleware
+from .downloadMiddlewares import EnvEnforcementFileDownloaderMiddleware
+from .spiderMiddlewares import EnvEnforcementFileSpiderMiddleware

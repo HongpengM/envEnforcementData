@@ -7,33 +7,60 @@ import pandas as pd; import numpy as np
 import json
 from bs4 import BeautifulSoup
 
-from envEnforcementData.utils import loadEntryUrls
+import envEnforcementData.utils as utils 
 from envEnforcementData.settings import ENTRY_URLS_FILE
 
 
 class EnvenforcefileSpider(scrapy.Spider):
     name = 'env_enforce_file'
     allowed_domains = ['gov.cn']
-    
+    custom_settings = {
+        'SPIDER_MIDDLEWARES': {
+            'envEnforcementData.middlewares.EnvEnforcementFileSpiderMiddleware': 543,
+        },
+        'DOWNLOADER_MIDDLEWARES': {
+            'envEnforcementData.middlewares.EnvEnforcementFileDownloaderMiddleware': 543,
+            'random_useragent.RandomUserAgentMiddleware': 400,
+        },
+        'DOWNLOADER_MIDDLEWARE_STORE_EXCLUDE':['download_timeout',
+                                               'download_slot',
+                                               'download_latency',
+                                               'store_path',]
+
+    }
 
     def start_requests(self):
-        self.urls_df = loadEntryUrls(ENTRY_URLS_FILE)
+        self.urls_df = utils.loadEntryUrls(ENTRY_URLS_FILE)
         urls = []
         for i in range(self.urls_df.shape[0]):
+            meta = {'EEFRO': self.settings.get('EEFRO_FIRST_TRY')}
+            url = self.urls_df.loc[i, 'APILink']
+            formatted_url, extra_meta = utils.enforcement_file_entry_start_request(url)
+            for i in extra_meta.keys():
+                meta[i] = extra_meta[i]
             urls.append(Request(
-                url = self.urls_df.loc[i, 'APILink'],
-                dont_filter=True, meta={'try':'firstTry'}))
+                url = formatted_url,
+                dont_filter=True, meta=meta))
         #print(self.urls_df)
         #print(self.urls_df['APILink'])
         print(urls)
         return urls
-    
+
+
     def parse(self, response):
-        print(response.status)
-        print(response.url)
-        print(response.meta)
+        print('response status', response.status)
+        print('response url', response.url)
+        print('response meta', response.meta)
+        print('response last path', utils.get_url_last_path(response.url))
+        code, data=utils.enforcement_file_entry_response_next(response)
+        print('response next step', code)
+        if data.get('count', None):
+            print('Count ', data['count'], ' Docs Len: ',str(len(data['docs'])))
         pass
 
+
+    def next_static_page(self, response):
+        pass
     
     def get_location(self, url):
         pass

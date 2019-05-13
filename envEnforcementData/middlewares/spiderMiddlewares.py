@@ -1,6 +1,14 @@
 from scrapy import signals
-
-class EnvenforcementdataSpiderMiddleware(object):
+from os import path as osp; import os
+import pickle
+import logging
+from envEnforcementData.settings import LOG_FOLDER
+logging.basicConfig(level=logging.INFO,
+                    filemode='w',
+                    filename=osp.join(LOG_FOLDER, 'spider_middleware.log'),
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('spiderMiddleware')
+class EnvEnforcementFileSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
     # passed objects.
@@ -17,6 +25,14 @@ class EnvenforcementdataSpiderMiddleware(object):
         # middleware and into the spider.
 
         # Should return None or raise an exception.
+        
+        # Passing `Request.meta` to `Response.meta` ###########################
+        
+        response.meta['store_path'] = response.meta['store_path']
+        
+        response_storage_path = response.meta['store_path']
+        with open(response_storage_path, 'wb') as f:
+            pickle.dump(response, f)
         return None
 
     def process_spider_output(self, response, result, spider):
