@@ -110,6 +110,7 @@ MONGO_DB = 'envPunishment'
 ###############################################################################
 
 ENTRY_URLS_FILE = 'entryUrls_minimal2.xlsx'
+FORCE_UPDATE_ENTRY_PICKLE = False
 DOWNLOAD_FOLDER = './download'
 LOG_FOLDER ='./logs'
 # Environment Protection File Response

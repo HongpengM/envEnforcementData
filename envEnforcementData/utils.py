@@ -1,13 +1,16 @@
-import pandas as pd
-import os
+
+import os, time, datetime
 import os.path as osp
-import yaml
 from urllib.parse import urlparse, urljoin, urlencode, parse_qs, urlencode, unquote, quote, ParseResult
-from envEnforcementData import settings
 import re
-import json
-from bs4 import BeautifulSoup
 from copy import copy
+from bs4 import BeautifulSoup
+import json,yaml
+
+import pandas as pd
+from validators.url import url as valid_url
+
+from envEnforcementData import settings
 from envEnforcementData.types import EntryNextResponse, EntryStartRequest
 
 import logging
@@ -76,6 +79,22 @@ def build_new_url_from_parsed(parsed_url, options=None):
 
     return new_url.geturl()
 
+def get_file_updated_time(filePath):
+    ''' Get a file modified time
+    
+    Args:
+        filePath(str):\
+    
+    Return:
+        datetime.datetime(Last Modifiedtime)
+    '''
+    if osp.exists(filePath):
+        modified_status = os.stat(filePath)[-2]
+        modified_timestamp = os.stat(filePath).st_mtime
+        modified_time = datetime.datetime.fromtimestamp(modified_timestamp)
+        return modified_time
+    else:
+        return None
 
 ###############################################################################
 #                     Environment Enforcement File Utils                      #
@@ -102,6 +121,25 @@ def loadEntryUrls(path):
 
 
 # Handling XHR Response #######################################################
+def extract_url_and_title_from_xhr(response):
+    ''' Extract URL and title from XHR response
+    
+    Args:
+        response(scrapy.http.Response): an XHR Response, must be in the `TextResponse` subclass
+
+    Return:
+        list(Crawlwed url & title): in `[{url:..., title:...}, ...]` format
+    '''
+    data = []
+    response_data = text_response_to_json(response)
+    for i in response_data['docs']:
+        if valid_url(i.get('url', None) if i.get('url', False) else i.get('url2', None)):
+            data.append({
+                'url': i.get('url', None) if i.get('url', False) else i.get('url2', None),
+                'title': i.get('title', None) if i.get('title', False) else i.get('title2', None)
+            })
+    return data
+
 def text_response_to_json(response):
     ''' Convert an XHR response text to JSON object
 
@@ -117,9 +155,8 @@ def text_response_to_json(response):
             re.sub("#'", '#"',
                    re.sub("'#", '"#', re.sub(r'\n', '', response.text)))))
 
-
 def is_query_dict_from_xhr(d):
-    ''' Judging if a urlparse.query dict is from an XHR Response
+    ''' Judging whether a query dict is from XHR Response
     
     Args:
         d(dict): query dict
@@ -130,6 +167,48 @@ def is_query_dict_from_xhr(d):
     return d.get('prepage', None) and d.get('page', None)
 
 
+def is_xhr_response_pattern(response):
+    ''' Judging whether a response is XHR type
+    
+    Args:
+        response(scrapy.http.Response): an Response object    
+    d(dict): query dict
+
+    Return:
+        boolean(True/False): True-xhr response, False-not xhr response
+    '''
+    parsed_url = urlparse(response.request.url)
+    query_dict = parse_qs(parsed_url.query)
+    return query_dict.get('prepage', None) and query_dict.get('page', None)
+
+# Handling Static Page ########################################################
+def extract_url_and_title_from_static_page(response):
+    #TODO
+    ''' Extract title and url for a static page response
+    
+    Args:
+        response(scrapy.http.Response): an Static HTML Response, must be in the `TextResponse` subclass
+
+    Return:
+        list(Crawlwed url & title): in `[{url:..., title:...}, ...]` format
+    '''
+    pass
+
+def is_static_html_url_parttern(response):
+    #TODO
+    ''' Judging if a response is static type
+    
+    Args:
+        response(scrapy.http.Response): an Response object    
+    d(dict): query dict
+
+    Return:
+        boolean(True/False): True-static response, False-not static response
+    '''
+    last_path = get_url_last_path(response.request.url)
+    print('--'*10, last_path)
+    
+    pass
 # Entry URL start request #####################################################
 def enforcement_file_entry_start_request(url):
     #TODO
@@ -181,16 +260,17 @@ def enforcement_file_entry_response_next(response):
         See `envEnforcementData.types.EntryNextResponse` for more details
 
     '''
-    parsed_url = urlparse(response.request.url)
-    query_dict = parse_qs(parsed_url.query)
+    
     # Detect XHR request feature, if XHR request, get JSON
-    if is_query_dict_from_xhr(query_dict):
+    if is_xhr_response_pattern(response):
+        data = extract_url_and_title_from_xhr(response)
         return EntryNextResponse(
             code=settings.EEFRO_NO_NEXT_TRY,
-            data=text_response_to_json(response))
-
+            data=data)
+    is_static_html_url_parttern(response)
     return EntryNextResponse(
-        code=parsed_url.query, data=parse_qs(parsed_url.query))
+        code='',
+        data='')
 
 
 # Downloader Middleware Utils #################################################

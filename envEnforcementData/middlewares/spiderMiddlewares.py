@@ -1,8 +1,10 @@
 from scrapy import signals
 from os import path as osp; import os
+import datetime
 import pickle
 import logging
-from envEnforcementData.settings import LOG_FOLDER
+from envEnforcementData.settings import LOG_FOLDER, FORCE_UPDATE_ENTRY_PICKLE
+import envEnforcementData.utils as utils
 logging.basicConfig(level=logging.INFO,
                     filemode='w',
                     filename=osp.join(LOG_FOLDER, 'spider_middleware.log'),
@@ -27,12 +29,25 @@ class EnvEnforcementFileSpiderMiddleware(object):
         # Should return None or raise an exception.
         
         # Passing `Request.meta` to `Response.meta` ###########################
-        
-        response.meta['store_path'] = response.meta['store_path']
-        
+
+        response.meta['store_path'] = response.meta['store_path']        
         response_storage_path = response.meta['store_path']
-        with open(response_storage_path, 'wb') as f:
-            pickle.dump(response, f)
+        if FORCE_UPDATE_ENTRY_PICKLE:
+            with open(response_storage_path, 'wb') as f:
+                pickle.dump(response, f)
+        else:
+            # if existed the downloaded file modified a day before, dumps to it 
+            if osp.exists(response_storage_path):
+                modified_time = utils.get_file_updated_time(response_storage_path)
+                time_from_last_modified = (datetime.datetime.now() - modified_time).total_seconds()
+                if time_from_last_modified < 24 * 3600:
+                    pass
+                else:
+                    with open(response_storage_path, 'wb') as f:
+                        pickle.dump(response, f)
+            else:
+                with open(response_storage_path, 'wb') as f:
+                        pickle.dump(response, f)
         return None
 
     def process_spider_output(self, response, result, spider):

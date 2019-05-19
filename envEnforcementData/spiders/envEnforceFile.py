@@ -14,6 +14,7 @@ from envEnforcementData.settings import ENTRY_URLS_FILE
 class EnvenforcefileSpider(scrapy.Spider):
     name = 'env_enforce_file'
     allowed_domains = ['gov.cn']
+    # Customized Settings, Use spider-specific Middleware
     custom_settings = {
         'SPIDER_MIDDLEWARES': {
             'envEnforcementData.middlewares.EnvEnforcementFileSpiderMiddleware': 543,
@@ -53,9 +54,11 @@ class EnvenforcefileSpider(scrapy.Spider):
         print('response meta', response.meta)
         print('response last path', utils.get_url_last_path(response.url))
         code, data=utils.enforcement_file_entry_response_next(response)
+        # print('response content', response.text)
+        print(data)
         print('response next step', code)
-        if data.get('count', None):
-            print('Count ', data['count'], ' Docs Len: ',str(len(data['docs'])))
+        print('Count ', len(data))
+        
         pass
 
 

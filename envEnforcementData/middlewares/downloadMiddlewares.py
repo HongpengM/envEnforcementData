@@ -8,10 +8,11 @@
 from scrapy import signals
 from scrapy.exceptions import IgnoreRequest
 from os import path as osp; import os
+import datetime
 from urllib.parse import urlparse
 import pickle
 
-from envEnforcementData.settings import LOG_FOLDER
+from envEnforcementData.settings import LOG_FOLDER, FORCE_UPDATE_ENTRY_PICKLE
 import envEnforcementData.utils as utils
 import logging
 logging.basicConfig(level=logging.INFO,
@@ -51,17 +52,33 @@ class EnvEnforcementFileDownloaderMiddleware(object):
         # Pass response path through request.meta
         # path constructing: DOWNLOAD_FOLDER + netloc + path + (page) + '.pkl'
         logger.info(request.meta)
-        logger.info(utils.response_storage_path_generator(spider.settings,
-                                                          request.url,
-                                                          request.meta))
         downloaded_request_path = utils.response_storage_path_generator(spider.settings,
-                                                          request.url,
-                                                          request.meta)
+                                                                        request.url,
+                                                                        request.meta)
+        logger.info('Function:'+
+                    self.process_request.__name__ +
+                    ' Downloaded Request Path Generated! '+
+                    downloaded_request_path)
         request.meta['store_path'] = downloaded_request_path
+
+        '''
+        Find file existed ?
+        -> Y If in force update mode?
+          --> Y ignore the existed file.
+          --> N recover from it
+        -> N Go on the middleware
+        '''
         # If find stored response, restore it!
         if osp.exists(downloaded_request_path):
-            logger.info('File already downloaded:' + downloaded_request_path)
-            raise IgnoreRequest('existed|' + downloaded_request_path)
+            # Restore entry response pickle if not in force update mode
+            if not FORCE_UPDATE_ENTRY_PICKLE:
+                modified_time = utils.get_file_updated_time(downloaded_request_path)
+                if (datetime.datetime.now() - modified_time).total_seconds() < 24*3600:
+                    logger.info('Function:'+
+                                self.process_request.__name__ +
+                                'File already downloaded:' +
+                                downloaded_request_path)
+                    raise IgnoreRequest('existed|' + downloaded_request_path)
         return None
 
     def process_response(self, request, response, spider):
@@ -71,8 +88,6 @@ class EnvEnforcementFileDownloaderMiddleware(object):
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
-
-       
 
         return response
 
