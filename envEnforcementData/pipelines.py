@@ -83,7 +83,8 @@ class MongoStoragePipeline(object):
                                     k+
                                     ':'+
                                     str(item[k]))
-                        
+                # TODO test possibleDuplicate.save()
+                possibleDuplicate.save()
 
         if not possibleDuplicate:
             self.db[item.collections].insert(dict(item))
