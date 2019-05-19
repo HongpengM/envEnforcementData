@@ -183,7 +183,6 @@ def is_xhr_response_pattern(response):
 
 # Handling Static Page ########################################################
 def extract_url_and_title_from_static_page(response):
-    #TODO
     ''' Extract title and url for a static page response
     
     Args:
@@ -192,10 +191,23 @@ def extract_url_and_title_from_static_page(response):
     Return:
         list(Crawlwed url & title): in `[{url:..., title:...}, ...]` format
     '''
+    data = []
+    ul_li_a = response.xpath('//ul/li/a')
+    for i in ul_li_a:
+        url = i.xpath('@href').extract()
+        title = i.xpath('@title').extract()
+        if len(title) < 0:
+            title = i.xpath('text()').extract()
+        if len(url) > 0 and len(title) > 0:
+            if valid_url(url[0]):
+                data.append({
+                    'url':url[0],
+                    'title':title[0]
+                })
+    return data
     pass
 
 def is_static_html_url_parttern(response):
-    #TODO
     ''' Judging if a response is static type
     
     Args:
@@ -205,10 +217,46 @@ def is_static_html_url_parttern(response):
     Return:
         boolean(True/False): True-static response, False-not static response
     '''
+    parsed_url = urlparse(response.request.url)
+    # if the request url has query parameters, it isn't a static page
+    if not parsed_url.query == '':
+        return False
     last_path = get_url_last_path(response.request.url)
+    # Currently there are 3 patterns for static page:
+    #   1. index.htm index_1.htm
+    #   2. list.htm list_1.htm
+    #   3. news-179-1.htm, news-179-2.htm ...
+    index_pattern_match = re.match(r'.*?index_?(?P<number>\d*)\.htm', last_path)
+    list_pattern_match = re.match(r'.*?list_?(?P<number>\d*)\.htm', last_path)
+    special179_pattern_match = re.match(r'.*news-179-(?P<number>\d*)\.htm', last_path)
     print('--'*10, last_path)
-    
-    pass
+    print(
+        index_pattern_match,
+        list_pattern_match,
+        special179_pattern_match
+    )
+    match = index_pattern_match or list_pattern_match or special179_pattern_match
+    try:
+        if not match:
+            # If not match, raise Exception
+            raise Exception('Static URL pattern parse error, maybe a new static URL pattern')
+    except Exception as e:
+        with open('urlpattern.log','a') as f:
+            logInfo = "-"*20 + '\n'
+            logInfo += str(e) + '\n'
+            logInfo += 'whole URL: ' + response.request.url + '\n'
+            logInfo += 'last path: ' + last_path +'\n'
+            print(logInfo)
+            f.write(logInfo)
+            
+    number = int(match.group('number')) if match.group('number') else None
+    return {
+        'match': match if match else False,
+        'pageNumebr': number
+    }
+
+# Handling Simple Dynamic Page ################################################
+
 # Entry URL start request #####################################################
 def enforcement_file_entry_start_request(url):
     #TODO
@@ -267,7 +315,15 @@ def enforcement_file_entry_response_next(response):
         return EntryNextResponse(
             code=settings.EEFRO_NO_NEXT_TRY,
             data=data)
-    is_static_html_url_parttern(response)
+    if is_static_html_url_parttern(response):
+        data = extract_url_and_title_from_static_page(response)
+        return EntryNextResponse(
+            code=settings.EEFRO_BUILD_NEXT_REQUEST_STATIC,
+            data=data
+        )
+    if is_simple_dynamic_url_pattern(response):
+        data = []
+    
     return EntryNextResponse(
         code='',
         data='')
