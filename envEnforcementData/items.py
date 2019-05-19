@@ -43,7 +43,7 @@ class FileResponseItem(Item):
     linkType = Field()
     relatedItemId = Field()
     fileType = Field() # ['json', 'html', 'xls','xlsx', 'doc', 'docx', 'png', 'jpg', 'csv']
-    responseContent = Field()
+    responseContent = Field() # pickle string
  
 
 class EnvEnforcementFileItem(Item):

@@ -110,6 +110,7 @@ MONGO_DB = 'envPunishment'
 ###############################################################################
 
 ENTRY_URLS_FILE = 'entryUrls_minimal2.xlsx'
+FORCE_UPDATE_ENTRY_PICKLE = False
 DOWNLOAD_FOLDER = './download'
 LOG_FOLDER ='./logs'
 # Environment Protection File Response
@@ -131,7 +132,7 @@ EEFEUF_XHR_REQUEST = 'xhr_request'
 # Environment Enforcement File Request Try Order
 EEFRO_FIRST_TRY = 'first-try'
 EEFRO_NO_NEXT_TRY = 'no-next-try'
-EEFRO_BUILD_NEXT_REQUEST_PARAM = 'build-next-request-param'
+EEFRO_BUILD_NEXT_REQUEST_SIMPLE_DYNAMIC = 'build-next-request-param'
 EEFRO_BUILD_NEXT_REQUEST_STATIC = 'build-next-request-static'
 EEFRO_USE_SELENIUM = 'use-selenium'
 

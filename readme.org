@@ -57,12 +57,12 @@
     |                                               | Rules to extends data                                                 | Progressing |
     |                                               | Machine Learning Data Auto Select Rules                               |             |
     |                                               | All failed --> Headless Browser                                       |             |
-    | 获取目标链接爬取，存储Enforcement Entry类数据 |                                                                       |             |
+    | 获取目标链接爬取，存储Enforcement File类数据 |                                                                       |             |
     |                                               | XPath Extractor                                                       |             |
     |                                               | Selenium Extractor                                                    |             |
-    |                                               | .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement Entry数据 |             |
+    |                                               | .doc, .pdf, .xls, .jpg, .png分别存储和直接解析成Enforcement File数据 |             |
     |                                               | QR Code图片的跳转处理                                                 |             |
-    | 对Enforcement Entry中的信息进行解析           |                                                                       |             |
+    | 对Enforcement File中的信息进行解析       |                                                                       |             |
     |                                               | 电子表格类信息的解析                                                  |             |
     | Enforcement Record数据的提取                  |                                                                       |             |
     |                                               | text --> NLP                                                          |             |
@@ -101,7 +101,29 @@ This repo is meant to collect raw environment enforcement data and get more dist
    4. 渲染动态页面，动态页面访问复杂      ------------------------->   Headless Driver(eg: CasperJS Selenium)
   
 
+* Documentation
 
+** Pipeline
+*** Overview
+**** envEnforceFile spider
+     spider start --> entryURL --[Middlewares] --> spider.parse --> XHR response --> `yield item`
+                                                                    Has next static response --> spider.next_static_page
+							                                     --> `yield item`
+								    Has next simple response --> spider.next_simple_dynamic_page
+							                                     --> `yield item`
+								    All failed   --> spider.use_complex_dynamic_parse
+     - *`spider.parse` use `utils.enforcement_file_entry_response_next` to find the next response and extract the data inside a response.*
+**** envEnforceData spider 
+     #TODO
+
+
+** Processing of Entry URL request & response
+   Request --> [Under Force Update] --[Download Middleware] -[Not Downloaded]-> Download --[Spider Middleware] --> Dump to store the response. 
+                                                            -[Downloaded]->     Download --[Spider Middleware] --> Dump to store the response. 
+	   --> [Under Normal Status]--[Download Middleware] -[Not Downloaded]-> Download --[Spider Middleware] --> Dump to store the response If the file modified 1 day before. 
+                                                            -[Downloaded, lt 1d]-> Recover  --[Spider Middleware] --> Do Nothing.
+							    -[Downloaded, gt 1d]-> Download  --[Spider Middleware] --> Dump to store the response. 
+							    
 * License
   Rights related to Source Codes (excluding the demo data, which copyrights belong to DoraHacks & The Sponsor) belongs to this gitlab account owner.
   Please view LICENSE file for further details
