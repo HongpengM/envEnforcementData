@@ -5,10 +5,15 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import os; import os.path as osp
 import logging
 import pymongo
+import envEnforcementData.settings as settings
 from envEnforcementData.items import EnvEnforcementFileItem, EnvEnforcementRecordItem
-
+logging.basicConfig(level=logging.INFO,
+                    filemode='a',
+                    filename=osp.join(settings.LOG_FOLDER, 'pipelines.log'),
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('*Pipeline Logger*')
 
 
@@ -52,6 +57,33 @@ class MongoStoragePipeline(object):
                 'pageTitle':
                 item['pageTitle']
             })
+            if possibleDuplicate:
+                different_keys = []
+                updated_permitted_keys = [
+                    'updatedAt',
+                    'pageType',
+                    'pageResponse',
+                    'pageResponseType',
+                    'pageTable',
+                    'pageAppendix'
+                ]
+                for k in item.keys():
+                    if possibleDuplicate[k] != item[k]:
+                        different_keys.append(k)
+                for k in different_keys:
+                    if k in updated_permitted_keys:
+                        if k == 'updatedAt':
+                            if (item[k] - possibleDuplicate[k]).total_seconds() < 3600:
+                                break
+                        possibleDuplicate[k] = item[k]
+                        logger.info('[Update]:: '+
+                                    ' Id:'+
+                                    possibleDuplicate['_id']+
+                                    ','+
+                                    k+
+                                    ':'+
+                                    str(item[k]))
+                        
 
         if not possibleDuplicate:
             self.db[item.collections].insert(dict(item))

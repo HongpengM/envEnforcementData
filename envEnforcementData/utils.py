@@ -199,13 +199,14 @@ def extract_url_and_title_from_static_page(response):
         if len(title) < 0:
             title = i.xpath('text()').extract()
         if len(url) > 0 and len(title) > 0:
-            if valid_url(url[0]):
+            url__ = urljoin(response.request.url, url[0])
+            if valid_url(url__):
                 data.append({
-                    'url':url[0],
+                    'url':url__,
                     'title':title[0]
-                })
+                }) 
     return data
-    pass
+    
 
 def is_static_html_url_parttern(response):
     ''' Judging if a response is static type
@@ -215,7 +216,7 @@ def is_static_html_url_parttern(response):
     d(dict): query dict
 
     Return:
-        boolean(True/False): True-static response, False-not static response
+        False/dict(matched result):  the matched information{match:<re.match>Obj/None,pageNumebr:<int>}
     '''
     parsed_url = urlparse(response.request.url)
     # if the request url has query parameters, it isn't a static page
@@ -229,12 +230,6 @@ def is_static_html_url_parttern(response):
     index_pattern_match = re.match(r'.*?index_?(?P<number>\d*)\.htm', last_path)
     list_pattern_match = re.match(r'.*?list_?(?P<number>\d*)\.htm', last_path)
     special179_pattern_match = re.match(r'.*news-179-(?P<number>\d*)\.htm', last_path)
-    print('--'*10, last_path)
-    print(
-        index_pattern_match,
-        list_pattern_match,
-        special179_pattern_match
-    )
     match = index_pattern_match or list_pattern_match or special179_pattern_match
     try:
         if not match:
@@ -251,12 +246,17 @@ def is_static_html_url_parttern(response):
             
     number = int(match.group('number')) if match.group('number') else None
     return {
-        'match': match if match else False,
+        'match': match if match else None,
         'pageNumebr': number
     }
 
 # Handling Simple Dynamic Page ################################################
-
+def is_simple_dynamic_url_pattern(response):
+    #TODO
+    return False
+def extract_url_and_title_from_simple_dynamic(response):
+    #TODO
+    return False
 # Entry URL start request #####################################################
 def enforcement_file_entry_start_request(url):
     #TODO
@@ -317,12 +317,17 @@ def enforcement_file_entry_response_next(response):
             data=data)
     if is_static_html_url_parttern(response):
         data = extract_url_and_title_from_static_page(response)
+        print('-'* 20, data)
         return EntryNextResponse(
             code=settings.EEFRO_BUILD_NEXT_REQUEST_STATIC,
             data=data
         )
     if is_simple_dynamic_url_pattern(response):
-        data = []
+        data = extract_url_and_title_from_simple_dynamic(response)
+        return EntryNextResponse(
+            code=settings.EEFRO_BUILD_NEXT_REQUEST_SIMPLE_DYNAMIC,
+            data=data
+        )
     
     return EntryNextResponse(
         code='',
